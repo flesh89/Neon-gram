@@ -341,7 +341,7 @@
           const post = doc.data();
           post.id = doc.id;
           if(post.banned) return; // Non mostra post           // Non mostra post bannati
-          if(post.banned) return;
+    
 
           const liked = post.likes.includes(currentUser.uid);
           const postEl = document.createElement('div');
@@ -421,7 +421,7 @@
   }
 
   // Aggiungi strike (solo founder o autore)
-  const FOUNDER_UID = AZuSikarXhRYl7gZmTU68E8ZBLD2.
+  const FOUNDER_UID = "AZuSikarXhRYl7gZmTU68E8ZBLD2";
 
   function addStrike(postId) {
     const postRef = db.collection('posts').doc(postId);
