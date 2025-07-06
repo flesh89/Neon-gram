@@ -4,6 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Neon-Gram™ - Social Etico</title>
+
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
   body {
@@ -124,16 +125,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-</head> 
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('✅ Service Worker registrato con successo!', reg))
-        .catch(err => console.error('❌ Errore Service Worker:', err));
-    });
-  }
-</script>
 <script>
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -143,8 +134,8 @@
     });
   }
 </script>
-</body>
-</html>
+
+</head>
 <body>
 
 <header>
@@ -163,9 +154,8 @@
     <button id="signup-btn">Registrati</button>
     <div class="error" id="auth-error"></div>
   </div>
+    <div id="app-section" style="display:none;">
 
-  <div id="app-section" style="display:none;">
-    
     <section id="founder-profile" class="profile">
       <h2>Profilo Fondatore</h2>
       <div class="flex-row">
@@ -196,8 +186,7 @@
       <button id="show-reels-btn">Reel</button>
       <button id="show-instagram-btn">Instagram</button>
     </nav>
-
-    <section id="feed-section">
+        <section id="feed-section">
       <h2>Feed Cronologico</h2>
       <section id="new-post-section">
         <textarea id="new-post-text" rows="3" placeholder="Scrivi il tuo post..."></textarea>
@@ -244,18 +233,18 @@
 
   </div>
 </div>
-
 <script>
   const firebaseConfig = {
-  apiKey: "AIzaSyCmTbOQGF1y_k5btshBA1wXpqAKRsQjqQU",
-  authDomain: "neon-gram.firebaseapp.com",
-  databaseURL: "https://neon-gram-default-rtdb.firebaseio.com",
-  projectId: "neon-gram",
-  storageBucket: "neon-gram.firebasestorage.app",
-  messagingSenderId: "290531580751",
-  appId: "1:290531580751:web:c906603f1feb39dab2c33a",
-  measurementId: "G-0CGKS8MMTT"
-};
+    apiKey: "AIzaSyCmTbOQGF1y_k5btshBA1wXpqAKRsQjqQU",
+    authDomain: "neon-gram.firebaseapp.com",
+    databaseURL: "https://neon-gram-default-rtdb.firebaseio.com",
+    projectId: "neon-gram",
+    storageBucket: "neon-gram.appspot.com",  // correggi qui
+    messagingSenderId: "290531580751",
+    appId: "1:290531580751:web:c906603f1feb39dab2c33a",
+    measurementId: "G-0CGKS8MMTT"
+  };
+
   // Init Firebase
   firebase.initializeApp(firebaseConfig);
   const auth = firebase.auth();
@@ -283,7 +272,7 @@
   let currentUser = null;
   let currentUsername = "";
 
-  // Login & Signup
+  // Login
   document.getElementById('login-btn').addEventListener('click', () => {
     authError.textContent = '';
     const email = emailInput.value.trim();
@@ -298,36 +287,7 @@
       .catch(e => authError.textContent = e.message);
   });
 
-  document.getElementById('signup-btn').addEventListener('click', () => {
-    authError.textContent = '';
-    const email = emailInput.value.trim();
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (!email || !password || !username) {
-      authError.textContent = "Compila tutti i campi";
-      return;
-    }
-
-    auth.createUserWithEmailAndPassword(email, password)
-      .then(cred => {
-        currentUser = cred.user;
-        currentUsername = username;
-  // Login & Signup
-  document.getElementById('login-btn').addEventListener('click', () => {
-    authError.textContent = '';
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (!email || !password) {
-      authError.textContent = "Email e password richiesti";
-      return;
-    }
-
-    auth.signInWithEmailAndPassword(email, password)
-      .catch(e => authError.textContent = e.message);
-  });
-
+  // Signup
   document.getElementById('signup-btn').addEventListener('click', () => {
     authError.textContent = '';
     const email = emailInput.value.trim();
@@ -352,10 +312,12 @@
       .catch(e => authError.textContent = e.message);
   });
 
+  // Logout
   logoutBtn.addEventListener('click', () => {
     auth.signOut();
   });
 
+  // Stato auth
   auth.onAuthStateChanged(user => {
     if (user) {
       currentUser = user;
@@ -374,6 +336,7 @@
     }
   });
 
+  // Mostra app
   function showApp() {
     authSection.style.display = "none";
     appSection.style.display = "block";
@@ -381,12 +344,14 @@
     loadPosts();
   }
 
+  // Mostra login
   function showLogin() {
     authSection.style.display = "block";
     appSection.style.display = "none";
     logoutBtn.style.display = "none";
   }
 
+  // Carica post
   function loadPosts() {
     postsContainer.innerHTML = '';
     db.collection('posts').orderBy('createdAt', 'desc').get()
@@ -400,6 +365,7 @@
       });
   }
 
+  // Crea elemento post
   function createPostElement(post, postId) {
     const div = document.createElement('div');
     div.className = 'post';
@@ -409,13 +375,14 @@
     div.appendChild(p);
 
     const author = document.createElement('small');
-    author.textContent = `@${post.username} - ${new Date(post.createdAt.toDate()).toLocaleString()}`;
+    let dateStr = post.createdAt ? new Date(post.createdAt.toDate()).toLocaleString() : '...';
+    author.textContent = `@${post.username} - ${dateStr}`;
     div.appendChild(author);
 
     const likeBtn = document.createElement('button');
     likeBtn.className = 'like-btn';
     likeBtn.textContent = `❤ ${post.likes ? post.likes.length : 0}`;
-    if (post.likes && post.likes.includes(currentUser.uid)) {
+    if (post.likes && currentUser && post.likes.includes(currentUser.uid)) {
       likeBtn.classList.add('liked');
     }
     likeBtn.addEventListener('click', () => toggleLike(postId, post.likes));
@@ -459,6 +426,7 @@
     return div;
   }
 
+  // Pubblica nuovo post
   document.getElementById('post-btn').addEventListener('click', () => {
     postError.textContent = '';
     const text = newPostText.value.trim();
@@ -477,64 +445,3 @@
       newPostText.value = '';
       loadPosts();
     }).catch(e => {
-      postError.textContent = e.message;
-    });
-  });
-
-  function toggleLike(postId, likes) {
-    if (!likes) likes = [];
-    const userHasLiked = likes.includes(currentUser.uid);
-    const postRef = db.collection('posts').doc(postId);
-    if (userHasLiked) {
-      postRef.update({
-        likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-      }).then(loadPosts);
-    } else {
-      postRef.update({
-        likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-      }).then(loadPosts);
-    }
-  }
-
-  function addComment(postId, text) {
-    const comment = {
-      username: currentUsername,
-      userId: currentUser.uid,
-      text,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    };
-    const postRef = db.collection('posts').doc(postId);
-    postRef.update({
-      comments: firebase.firestore.FieldValue.arrayUnion(comment)
-    }).then(loadPosts);
-  }
-
-  // Navigazione sezioni
-  document.getElementById('show-feed-btn').addEventListener('click', () => {
-    feedSection.style.display = 'block';
-    musicSection.style.display = 'none';
-    reelSection.style.display = 'none';
-    instagramSection.style.display = 'none';
-  });
-
-  document.getElementById('show-music-btn').addEventListener('click', () => {
-    feedSection.style.display = 'none';
-    musicSection.style.display = 'block';
-    reelSection.style.display = 'none';
-    instagramSection.style.display = 'none';
-  });
-
-  document.getElementById('show-reels-btn').addEventListener('click', () => {
-    feedSection.style.display = 'none';
-    musicSection.style.display = 'none';
-    reelSection.style.display = 'block';
-    instagramSection.style.display = 'none';
-  });
-
-  document.getElementById('show-instagram-btn').addEventListener('click', () => {
-    feedSection.style.display = 'none';
-    musicSection.style.display = 'none';
-    reelSection.style.display = 'none';
-    instagramSection.style.display = 'block';
-  });
-</script>
