@@ -124,7 +124,17 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-</head>
+</head> 
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('✅ Service Worker registrato con successo!', reg))
+        .catch(err => console.error('❌ Errore Service Worker:', err));
+    });
+  }
+</script>
+</body>
 <body>
 
 <header>
