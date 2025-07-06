@@ -1,0 +1,19 @@
+const CACHE_NAME = 'neon-gram-cache-v1';
+const urlsToCache = [
+  '.',
+  'manifest.json',
+  'https://fonts.googleapis.com/css2?family=Orbitron&display=swap',
+  // aggiungi altre risorse se vuoi
+];
+
+self.addEventListener('install', event => {
+  event.waitUntil(
+    caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+  );
+});
+
+self.addEventListener('fetch', event => {
+  event.respondWith(
+    caches.match(event.request).then(resp => resp || fetch(event.request))
+  );
+});
