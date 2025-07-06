@@ -134,7 +134,17 @@
     });
   }
 </script>
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js')
+        .then(reg => console.log('✅ Service Worker registrato con successo!', reg))
+        .catch(err => console.error('❌ Errore durante la registrazione del Service Worker:', err));
+    });
+  }
+</script>
 </body>
+</html>
 <body>
 
 <header>
@@ -303,7 +313,36 @@
       .then(cred => {
         currentUser = cred.user;
         currentUsername = username;
-        // Salva username nel database Firestore
+  // Login & Signup
+  document.getElementById('login-btn').addEventListener('click', () => {
+    authError.textContent = '';
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!email || !password) {
+      authError.textContent = "Email e password richiesti";
+      return;
+    }
+
+    auth.signInWithEmailAndPassword(email, password)
+      .catch(e => authError.textContent = e.message);
+  });
+
+  document.getElementById('signup-btn').addEventListener('click', () => {
+    authError.textContent = '';
+    const email = emailInput.value.trim();
+    const username = usernameInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if (!email || !password || !username) {
+      authError.textContent = "Compila tutti i campi";
+      return;
+    }
+
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(cred => {
+        currentUser = cred.user;
+        currentUsername = username;
         return db.collection('users').doc(currentUser.uid).set({
           username,
           strikes: 0,
@@ -348,7 +387,6 @@
     logoutBtn.style.display = "none";
   }
 
-  // Funzione per caricare i post dal database Firestore, ordinati per data (più recenti prima)
   function loadPosts() {
     postsContainer.innerHTML = '';
     db.collection('posts').orderBy('createdAt', 'desc').get()
@@ -362,22 +400,18 @@
       });
   }
 
-  // Crea l'elemento HTML di un post
   function createPostElement(post, postId) {
     const div = document.createElement('div');
     div.className = 'post';
 
-    // Testo post
     const p = document.createElement('p');
     p.textContent = post.text;
     div.appendChild(p);
 
-    // Autore e data
     const author = document.createElement('small');
     author.textContent = `@${post.username} - ${new Date(post.createdAt.toDate()).toLocaleString()}`;
     div.appendChild(author);
 
-    // Like button e contatore
     const likeBtn = document.createElement('button');
     likeBtn.className = 'like-btn';
     likeBtn.textContent = `❤ ${post.likes ? post.likes.length : 0}`;
@@ -387,7 +421,6 @@
     likeBtn.addEventListener('click', () => toggleLike(postId, post.likes));
     div.appendChild(likeBtn);
 
-    // Commenti
     const commentsList = document.createElement('div');
     commentsList.className = 'comments-list';
     if (post.comments) {
@@ -400,7 +433,6 @@
     }
     div.appendChild(commentsList);
 
-    // Campo per nuovo commento
     const commentInput = document.createElement('input');
     commentInput.placeholder = "Scrivi un commento...";
     commentInput.style.width = "calc(100% - 90px)";
@@ -427,7 +459,6 @@
     return div;
   }
 
-  // Funzione per pubblicare un nuovo post
   document.getElementById('post-btn').addEventListener('click', () => {
     postError.textContent = '';
     const text = newPostText.value.trim();
@@ -450,7 +481,6 @@
     });
   });
 
-  // Funzione per gestire like/unlike
   function toggleLike(postId, likes) {
     if (!likes) likes = [];
     const userHasLiked = likes.includes(currentUser.uid);
@@ -466,504 +496,45 @@
     }
   }
 
-  // Funzione per aggiungere commento
   function addComment(postId, text) {
     const comment = {
       username: currentUsername,
-      <!DOCTYPE html>
-<html lang="it">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Neon-Gram™ - Social Etico</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Orbitron&display=swap');
-  body {
-    margin: 0; background: #0a0a0a; color: #ff1a1a;
-    font-family: 'Orbitron', sans-serif;
-  }
-  header {
-    background: #000; padding: 15px 20px;
-    border-bottom: 3px solid #ff1a1a;
-    display: flex; justify-content: space-between; align-items: center;
-    text-shadow: 0 0 8px #ff1a1a;
-  }
-  button {
-    background: #ff1a1a; border: none; color: #000; font-weight: bold;
-    padding: 8px 16px; cursor: pointer; border-radius: 5px;
-    transition: background 0.3s ease;
-  }
-  button:hover {
-    background: #cc1515;
-  }
-  input, textarea {
-    background: #1a0000; border: 2px solid #ff1a1a; border-radius: 8px;
-    color: #fff; padding: 10px; font-size: 1rem;
-    margin: 5px 0;
-    width: 100%;
-    box-sizing: border-box;
-    resize: none;
-    font-family: 'Orbitron', sans-serif;
-  }
-  .container {
-    max-width: 600px; margin: 20px auto; padding: 0 20px;
-  }
-  h1,h2,h3,h4 {
-    color: #ff1a1a; text-shadow: 0 0 10px #ff1a1a;
-    margin-bottom: 10px;
-  }
-  .profile, .post, .comment {
-    background: #1a0000;
-    border-radius: 10px;
-    padding: 15px;
-    margin-bottom: 20px;
-    box-shadow: 0 0 15px #ff1a1a66;
-  }
-  .profile img {
-    width: 120px; height: 120px; border-radius: 50%;
-    border: 3px solid #ff1a1a; box-shadow: 0 0 20px #ff1a1a;
-  }
-  .flex-row {
-    display: flex; align-items: center; gap: 20px;
-  }
-  .stats div {
-    margin-right: 25px;
-    font-weight: bold;
-  }
-  .quote {
-    font-style: italic;
-    border-left: 4px solid #ff1a1a;
-    padding-left: 10px;
-    margin: 8px 0;
-  }
-  .error {
-    color: #ff4d4d; margin: 10px 0;
-    font-weight: bold;
-  }
-  .like-btn {
-    background: transparent;
-    border: none;
-    color: #ff1a1a;
-    cursor: pointer;
-    font-size: 1.1rem;
-  }
-  .liked {
-    color: #ff4d4d;
-  }
-  .strike-btn {
-    background: #660000;
-    border: none;
-    color: #ff1a1a;
-    font-weight: bold;
-    cursor: pointer;
-    padding: 5px 10px;
-    border-radius: 5px;
-    margin-left: 10px;
-  }
-  .comments-list {
-    max-height: 150px;
-    overflow-y: auto;
-    margin-top: 10px;
-    border-top: 1px solid #330000;
-    padding-top: 10px;
-  }
-  .comment {
-    margin-bottom: 10px;
-  }
-  audio, iframe.video-reel {
-    width: 100%;
-    margin-top: 10px;
-    border-radius: 8px;
-    outline: none;
-  }
-  iframe.video-reel {
-    height: 315px;
-    border: none;
-  }
-  nav {
-    margin-bottom: 20px;
-    text-align: center;
-  }
-  nav button {
-    margin: 0 10px;
-    padding: 8px 16px;
-    font-weight: bold;
-  }
-</style>
-
-<link rel="manifest" href="manifest.json" />
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
-</head>
-<body>
-
-<header>
-  <h1>Neon-Gram™</h1>
-  <button id="logout-btn" style="display:none;">Logout</button>
-</header>
-
-<div class="container">
-
-  <div id="auth-section">
-    <h2>Login / Registrazione</h2>
-    <input type="email" id="email" placeholder="Email" />
-    <input type="text" id="username" placeholder="Username" />
-    <input type="password" id="password" placeholder="Password" />
-    <button id="login-btn">Login</button>
-    <button id="signup-btn">Registrati</button>
-    <div class="error" id="auth-error"></div>
-  </div>
-
-  <div id="app-section" style="display:none;">
-    
-    <section id="founder-profile" class="profile">
-      <h2>Profilo Fondatore</h2>
-      <div class="flex-row">
-        <img src="https://instagram.fmad3-2.fna.fbcdn.net/v/t51.2885-19/357258591_643679320042073_2111564241400347054_n.jpg?stp=dst-jpg_s150x150&_nc_ht=instagram.fmad3-2.fna.fbcdn.net&_nc_cat=1&_nc_ohc=8i1iNXxCRR4AX9BoQ_3&edm=ABfd0MgBAAAA&ccb=7-5&oh=00_AfAbchmzH_TlxPBpP2V-CsBdYYip66PeqXHpJgq3FY9zXw&oe=64E0FA36&_nc_sid=7bff83" alt="Silent Instagram" />
-        <div>
-          <h3><a href="https://instagram.com/silent_italy_official" target="_blank" style="color:#ff1a1a; text-decoration:none;">@silent_italy_official</a></h3>
-          <div class="stats">
-            <div>245 Post</div>
-            <div>98M Follower</div>
-            <div>999 Seguiti</div>
-          </div>
-          <p>Sono Silent. Rapper, creatore, fondatore di Neon-Gram™. Ho visto il peggio e l'ho trasformato in visione. Neon-Gram non è solo un’app, è una missione.</p>
-          <p><strong>Ascolta la mia canzone:</strong> <a href="https://youtu.be/O-32JAmqpQE?si=6GvdF3pKLW40-C16" target="_blank" style="color:#ff1a1a; text-decoration: underline;">Guerriero - YouTube</a></p>
-          <div>
-            <h4>Frasi iconiche:</h4>
-            <p class="quote">"Il successo? O lo fai, o resti sul cesso."</p>
-            <p class="quote">"Hai fame? Allora alzati e prenditelo."</p>
-            <p class="quote">"Io sono quello che fa paura al diavolo."</p>
-            <p class="quote">"Nessuno ti regala nulla. Nemmeno il tempo."</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <nav>
-      <button id="show-feed-btn">Feed</button>
-      <button id="show-music-btn">Musica</button>
-      <button id="show-reels-btn">Reel</button>
-      <button id="show-instagram-btn">Instagram</button>
-    </nav>
-
-    <section id="feed-section">
-      <h2>Feed Cronologico</h2>
-      <section id="new-post-section">
-        <textarea id="new-post-text" rows="3" placeholder="Scrivi il tuo post..."></textarea>
-        <button id="post-btn">Pubblica</button>
-        <div class="error" id="post-error"></div>
-      </section>
-      <div id="posts-container"></div>
-    </section>
-
-    <section id="music-section" style="display:none;">
-      <h2>Sezione Musica</h2>
-      <div>
-        <strong>Silent - Guerriero</strong>
-        <audio controls src="https://cdn.example.com/audio/guerriero.mp3"></audio>
-      </div>
-      <div>
-        <strong>Silent - Ribelle</strong>
-        <audio controls src="https://cdn.example.com/audio/ribelle.mp3"></audio>
-      </div>
-    </section>
-
-    <section id="reel-section" style="display:none;">
-      <h2>Reel - Video</h2>
-      <div>
-        <iframe class="video-reel" src="https://www.youtube.com/embed/Il7q50Buw5c" allowfullscreen></iframe>
-        <p>Silent - Guerriero</p>
-      </div>
-      <div>
-        <iframe class="video-reel" src="https://www.youtube.com/embed/0hQjs_jylYw" allowfullscreen></iframe>
-        <p>Silent - Ribelle</p>
-      </div>
-    </section>
-
-    <section id="instagram-section" style="display:none; margin-top:30px;">
-      <h2>Feed Instagram</h2>
-      <iframe
-        src="https://lightwidget.com/widgets/your-widget-id.html"
-        style="border:none; overflow:hidden; width:100%; height:600px;"
-        scrolling="no"
-        allowtransparency="true"
-        title="Instagram feed"
-      ></iframe>
-    </section>
-
-  </div>
-</div>
-
-<script>
-  const firebaseConfig = {
-  apiKey: "AIzaSyCmTbOQGF1y_k5btshBA1wXpqAKRsQjqQU",
-  authDomain: "neon-gram.firebaseapp.com",
-  databaseURL: "https://neon-gram-default-rtdb.firebaseio.com",
-  projectId: "neon-gram",
-  storageBucket: "neon-gram.firebasestorage.app",
-  messagingSenderId: "290531580751",
-  appId: "1:290531580751:web:c906603f1feb39dab2c33a",
-  measurementId: "G-0CGKS8MMTT"
-};
-  // Init Firebase
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
-  const db = firebase.firestore();
-
-  // Elementi DOM
-  const authSection = document.getElementById('auth-section');
-  const appSection = document.getElementById('app-section');
-  const logoutBtn = document.getElementById('logout-btn');
-  const authError = document.getElementById('auth-error');
-  const postError = document.getElementById('post-error');
-
-  const emailInput = document.getElementById('email');
-  const usernameInput = document.getElementById('username');
-  const passwordInput = document.getElementById('password');
-  const newPostText = document.getElementById('new-post-text');
-  const postsContainer = document.getElementById('posts-container');
-
-  const feedSection = document.getElementById('feed-section');
-  const musicSection = document.getElementById('music-section');
-  const reelSection = document.getElementById('reel-section');
-  const instagramSection = document.getElementById('instagram-section');
-
-  // Stato utente
-  let currentUser = null;
-  let currentUsername = "";
-
-  // Login & Signup
-  document.getElementById('login-btn').addEventListener('click', () => {
-    authError.textContent = '';
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (!email || !password) {
-      authError.textContent = "Email e password richiesti";
-      return;
-    }
-
-    auth.signInWithEmailAndPassword(email, password)
-      .catch(e => authError.textContent = e.message);
-  });
-
-  document.getElementById('signup-btn').addEventListener('click', () => {
-    authError.textContent = '';
-    const email = emailInput.value.trim();
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value.trim();
-
-    if (!email || !password || !username) {
-      authError.textContent = "Compila tutti i campi";
-      return;
-    }
-
-    auth.createUserWithEmailAndPassword(email, password)
-      .then(cred => {
-        currentUser = cred.user;
-        currentUsername = username;
-        // Salva username nel database Firestore
-        return db.collection('users').doc(currentUser.uid).set({
-          username,
-          strikes: 0,
-          banned: false
-        });
-      })
-      .catch(e => authError.textContent = e.message);
-  });
-
-  logoutBtn.addEventListener('click', () => {
-    auth.signOut();
-  });
-
-  auth.onAuthStateChanged(user => {
-    if (user) {
-      currentUser = user;
-      db.collection('users').doc(user.uid).get().then(doc => {
-        if (doc.exists) {
-          currentUsername = doc.data().username;
-        } else {
-          currentUsername = "Utente";
-        }
-        showApp();
-      });
-    } else {
-      currentUser = null;
-      currentUsername = "";
-      showLogin();
-    }
-  });
-
-  function showApp() {
-    authSection.style.display = "none";
-    appSection.style.display = "block";
-    logoutBtn.style.display = "inline-block";
-    loadPosts();
-  }
-
-  function showLogin() {
-    authSection.style.display = "block";
-    appSection.style.display = "none";
-    logoutBtn.style.display = "none";
-  }
-
-  // Funzione per caricare i post dal database Firestore, ordinati per data (più recenti prima)
-  function loadPosts() {
-    postsContainer.innerHTML = '';
-    db.collection('posts').orderBy('createdAt', 'desc').get()
-      .then(snapshot => {
-        snapshot.forEach(doc => {
-          const post = doc.data();
-          const postId = doc.id;
-          const postElement = createPostElement(post, postId);
-          postsContainer.appendChild(postElement);
-        });
-      });
-  }
-
-  // Crea l'elemento HTML di un post
-  function createPostElement(post, postId) {
-    const div = document.createElement('div');
-    div.className = 'post';
-
-    // Testo post
-    const p = document.createElement('p');
-    p.textContent = post.text;
-    div.appendChild(p);
-
-    // Autore e data
-    const author = document.createElement('small');
-    author.textContent = `@${post.username} - ${new Date(post.createdAt.toDate()).toLocaleString()}`;
-    div.appendChild(author);
-
-    // Like button e contatore
-    const likeBtn = document.createElement('button');
-    likeBtn.className = 'like-btn';
-    likeBtn.textContent = `❤ ${post.likes ? post.likes.length : 0}`;
-    if (post.likes && post.likes.includes(currentUser.uid)) {
-      likeBtn.classList.add('liked');
-    }
-    likeBtn.addEventListener('click', () => toggleLike(postId, post.likes));
-    div.appendChild(likeBtn);
-
-    // Commenti
-    const commentsList = document.createElement('div');
-    commentsList.className = 'comments-list';
-    if (post.comments) {
-      post.comments.forEach(c => {
-        const commentDiv = document.createElement('div');
-        commentDiv.className = 'comment';
-        commentDiv.textContent = `@${c.username}: ${c.text}`;
-        commentsList.appendChild(commentDiv);
-      });
-    }
-    div.appendChild(commentsList);
-
-    // Campo per nuovo commento
-    const commentInput = document.createElement('input');
-    commentInput.placeholder = "Scrivi un commento...";
-    commentInput.style.width = "calc(100% - 90px)";
-    commentInput.style.marginTop = "5px";
-
-    const commentBtn = document.createElement('button');
-    commentBtn.textContent = "Invia";
-    commentBtn.style.marginLeft = "5px";
-
-    commentBtn.addEventListener('click', () => {
-      const text = commentInput.value.trim();
-      if (!text) return;
-      addComment(postId, text);
-      commentInput.value = '';
-    });
-
-    const commentContainer = document.createElement('div');
-    commentContainer.style.display = 'flex';
-    commentContainer.style.marginTop = '5px';
-    commentContainer.appendChild(commentInput);
-    commentContainer.appendChild(commentBtn);
-    div.appendChild(commentContainer);
-
-    return div;
-  }
-
-  // Funzione per pubblicare un nuovo post
-  document.getElementById('post-btn').addEventListener('click', () => {
-    postError.textContent = '';
-    const text = newPostText.value.trim();
-    if (!text) {
-      postError.textContent = "Scrivi qualcosa per pubblicare.";
-      return;
-    }
-    db.collection('posts').add({
-      text,
-      username: currentUsername,
       userId: currentUser.uid,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-      likes: [],
-      comments: []
-    }).then(() => {
-      newPostText.value = '';
-      loadPosts();
-    }).catch(e => {
-      postError.textContent = e.message;
-    });
-  });
-
-  // Funzione per gestire like/unlike
-  function toggleLike(postId, likes) {
-    if (!likes) likes = [];
-    const userHasLiked = likes.includes(currentUser.uid);
+      text,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    };
     const postRef = db.collection('posts').doc(postId);
-    if (userHasLiked) {
-      postRef.update({
-        likes: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
-      }).then(loadPosts);
-    } else {
-      postRef.update({
-        likes: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-      }).then(loadPosts);
-    }
+    postRef.update({
+      comments: firebase.firestore.FieldValue.arrayUnion(comment)
+    }).then(loadPosts);
   }
 
-  // Funzione per aggiungere commento
-function addComment(postId, text) {
-  const comment = {
-    username: currentUsername,
-    userId: currentUser.uid,
-    text,
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  const postRef = db.collection('posts').doc(postId);
-  postRef.update({
-    comments: firebase.firestore.FieldValue.arrayUnion(comment)
-  }).then(loadPosts);
-}
+  // Navigazione sezioni
+  document.getElementById('show-feed-btn').addEventListener('click', () => {
+    feedSection.style.display = 'block';
+    musicSection.style.display = 'none';
+    reelSection.style.display = 'none';
+    instagramSection.style.display = 'none';
+  });
 
-// Navigazione sezioni (feed, musica, reel, instagram)
-document.getElementById('show-feed-btn').addEventListener('click', () => {
-  feedSection.style.display = 'block';
-  musicSection.style.display = 'none';
-  reelSection.style.display = 'none';
-  instagramSection.style.display = 'none';
-});
-document.getElementById('show-music-btn').addEventListener('click', () => {
-  feedSection.style.display = 'none';
-  musicSection.style.display = 'block';
-  reelSection.style.display = 'none';
-  instagramSection.style.display = 'none';
-});
-document.getElementById('show-reels-btn').addEventListener('click', () => {
-  feedSection.style.display = 'none';
-  musicSection.style.display = 'none';
-  reelSection.style.display = 'block';
-  instagramSection.style.display = 'none';
-});
-document.getElementById('show-instagram-btn').addEventListener('click', () => {
-  feedSection.style.display = 'none';
-  musicSection.style.display = 'none';
-  reelSection.style.display = 'none';
-  instagramSection.style.display = 'block';
-});
+  document.getElementById('show-music-btn').addEventListener('click', () => {
+    feedSection.style.display = 'none';
+    musicSection.style.display = 'block';
+    reelSection.style.display = 'none';
+    instagramSection.style.display = 'none';
+  });
+
+  document.getElementById('show-reels-btn').addEventListener('click', () => {
+    feedSection.style.display = 'none';
+    musicSection.style.display = 'none';
+    reelSection.style.display = 'block';
+    instagramSection.style.display = 'none';
+  });
+
+  document.getElementById('show-instagram-btn').addEventListener('click', () => {
+    feedSection.style.display = 'none';
+    musicSection.style.display = 'none';
+    reelSection.style.display = 'none';
+    instagramSection.style.display = 'block';
+  });
+</script>
